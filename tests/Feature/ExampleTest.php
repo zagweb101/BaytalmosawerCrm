@@ -110,6 +110,7 @@ class ExampleTest extends TestCase
             'email' => 'sales@example.com',
             'password' => 'password',
             'role' => 'sales',
+            'role_id' => Role::where('slug', 'sales')->value('id'),
         ]);
 
         $response = $this->actingAs($salesUser)->delete("/customers/{$customer->id}");
@@ -127,7 +128,7 @@ class ExampleTest extends TestCase
             'name' => 'New Sales',
             'email' => 'new-sales@example.com',
             'password' => 'password123',
-            'role' => 'sales',
+            'role_id' => Role::where('slug', 'sales')->value('id'),
         ]);
 
         $response->assertRedirect('/users');

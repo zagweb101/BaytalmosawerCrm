@@ -6,4 +6,5 @@ git pull origin main
 $PHP artisan migrate --force
 $PHP artisan storage:link 2>/dev/null || true
 $PHP artisan optimize:clear
+$PHP artisan crm:verify
 echo "Deployed OK"

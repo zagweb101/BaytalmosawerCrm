@@ -19,5 +19,10 @@
 fix-*.php
 patch-*.php
 diagnose-*.php
+add-*.php
+restructure-*.php
+crm-health-check.php
+.phpunit.result.cache
+u166250023*
 *.bak*
 *.bak-*

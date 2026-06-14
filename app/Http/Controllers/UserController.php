@@ -37,13 +37,14 @@ class UserController extends Controller
         $companyIds = $this->extractCompanyIds($request, $data);
         $user = User::create($this->onlyUserFields($this->withLegacyRole($data)));
         $this->syncUserCompanies($user, $companyIds);
+
         return redirect()->route('users.index')->with('success', 'تمت إضافة المستخدم.');
     }
 
     public function edit(User $user): View
     {
         return view('users.edit', [
-            'user' => $user->load('companies'),
+            'user' => $user->load(['companies', 'roleModel']),
             'roles' => Role::orderBy('name')->get(),
             'companies' => Company::orderBy('id')->get(),
             'selectedCompanies' => $user->companies->pluck('id')->all(),
@@ -62,6 +63,7 @@ class UserController extends Controller
         $companyIds = $this->extractCompanyIds($request, $data);
         $user->update($this->onlyUserFields($this->withLegacyRole($data)));
         $this->syncUserCompanies($user, $companyIds);
+
         return redirect()->route('users.index')->with('success', 'تم تحديث المستخدم.');
     }
 
@@ -112,19 +114,31 @@ class UserController extends Controller
     private function withLegacyRole(array $data): array
     {
         $role = Role::find($data['role_id']);
-        $data['role'] = $role?->slug === 'manager' || $role?->slug === 'super_admin' ? 'manager' : 'sales';
+
+        if ($role?->slug === 'super_admin' || ! empty($data['is_super_admin'])) {
+            $data['role'] = 'manager';
+            $data['is_super_admin'] = true;
+        } elseif ($role?->slug === 'manager') {
+            $data['role'] = 'manager';
+            $data['is_super_admin'] = false;
+        } else {
+            $data['role'] = 'sales';
+            $data['is_super_admin'] = false;
+        }
+
         return $data;
     }
+
     private function onlyUserFields(array $data): array
     {
         $allowed = [
-            'name', 'email', 'password', 'role', 'role_id', 'email_verified_at',
+            'name', 'email', 'password', 'role', 'role_id', 'email_verified_at', 'is_super_admin',
         ];
 
         return array_intersect_key($data, array_flip($allowed));
     }
 
-    private function extractCompanyIds($request, array $data): ?array
+    private function extractCompanyIds(Request $request, array $data): ?array
     {
         if ($request->boolean('is_super_admin')) {
             return [];
@@ -135,24 +149,27 @@ class UserController extends Controller
         return is_array($ids) ? array_values(array_filter(array_map('intval', $ids))) : [];
     }
 
-    private function applySuperAdminFlag($request, array $data): array
+    private function applySuperAdminFlag(Request $request, array $data): array
     {
-        unset($data['is_super_admin']);
-
         if ($request->boolean('is_super_admin')) {
-            $roleId = \App\Models\Role::where('slug', 'super_admin')->value('id');
+            $roleId = Role::where('slug', 'super_admin')->value('id');
+
             if ($roleId) {
                 $data['role_id'] = $roleId;
             }
+
+            $data['is_super_admin'] = true;
             $data['role'] = 'manager';
+        } else {
+            $data['is_super_admin'] = false;
         }
 
         return $data;
     }
 
-    private function syncUserCompanies(\App\Models\User $user, ?array $companyIds): void
+    private function syncUserCompanies(User $user, ?array $companyIds): void
     {
-        if ($companyIds === null || ! method_exists($user, 'companies')) {
+        if ($companyIds === null) {
             return;
         }
 

@@ -463,6 +463,35 @@
             letter-spacing: 0;
         }
 
+        .avatar-row {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .avatar-preview,
+        .avatar-placeholder {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .avatar-preview {
+            object-fit: cover;
+            border: 2px solid var(--line);
+        }
+
+        .avatar-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--soft-line);
+            color: var(--muted);
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
         .toolbar {
             display: grid;
             grid-template-columns: 1fr minmax(150px, 210px) auto;
@@ -1157,7 +1186,7 @@
 
                 <div class="sidebar-section">
                     <div class="sidebar-label">الحساب</div>
-                    <a class="nav-item {{ request()->routeIs('password.*') ? 'active' : '' }}" href="{{ route('password.edit') }}">كلمة المرور</a>
+                    <a class="nav-item {{ request()->routeIs('profile.*') ? 'active' : '' }}" href="{{ route('profile.edit') }}">البروفايل</a>
                 </div>
 
                 <form method="POST" action="{{ route('logout') }}">

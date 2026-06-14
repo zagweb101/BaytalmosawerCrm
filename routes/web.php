@@ -14,6 +14,7 @@ use App\Http\Controllers\ExportController;
 use App\Http\Controllers\FollowUpController;
 use App\Http\Controllers\OfferingController;
 use App\Http\Controllers\PipelineController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RecommendationActionController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
@@ -30,8 +31,10 @@ Route::post('login', [AuthController::class, 'store'])->name('login.store');
 Route::post('logout', [AuthController::class, 'destroy'])->middleware('auth')->name('logout');
 
 Route::middleware('auth')->group(function () {
-    Route::get('password', [AuthController::class, 'editPassword'])->name('password.edit');
-    Route::patch('password', [AuthController::class, 'updatePassword'])->name('password.update');
+    Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+    Route::redirect('password', '/profile')->name('password.edit');
 
     Route::get('dashboard', DashboardController::class)->middleware('permission:dashboard.view')->name('dashboard');
     Route::get('pipeline', [PipelineController::class, 'index'])->middleware('permission:customers.view')->name('pipeline.index');

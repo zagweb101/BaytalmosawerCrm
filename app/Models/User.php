@@ -57,7 +57,7 @@ class User extends Authenticatable
 
     public function isSuperAdmin(): bool
     {
-        if ((bool) ($this->attributes['is_super_admin'] ?? false)) {
+        if (array_key_exists('is_super_admin', $this->attributes) && (bool) $this->attributes['is_super_admin']) {
             return true;
         }
 

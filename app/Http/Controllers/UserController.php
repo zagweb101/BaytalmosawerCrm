@@ -7,6 +7,7 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -132,8 +133,12 @@ class UserController extends Controller
     private function onlyUserFields(array $data): array
     {
         $allowed = [
-            'name', 'email', 'password', 'role', 'role_id', 'email_verified_at', 'is_super_admin',
+            'name', 'email', 'password', 'role', 'role_id', 'email_verified_at',
         ];
+
+        if (Schema::hasColumn('users', 'is_super_admin')) {
+            $allowed[] = 'is_super_admin';
+        }
 
         return array_intersect_key($data, array_flip($allowed));
     }

@@ -22,7 +22,17 @@ class ExampleTest extends TestCase
     {
         parent::setUp();
 
-        $this->actingAs(User::where('email', 'admin@crm.local')->first());
+        $admin = User::where('email', 'admin@crm.local')->first();
+        $superAdminRole = Role::where('slug', 'super_admin')->first();
+
+        if ($admin && $superAdminRole) {
+            $admin->update([
+                'role_id' => $superAdminRole->id,
+                'is_super_admin' => true,
+            ]);
+        }
+
+        $this->actingAs($admin);
     }
 
     /**
@@ -66,17 +76,17 @@ class ExampleTest extends TestCase
     {
         $user = User::where('email', 'admin@crm.local')->first();
 
-        $this->get('/password')
+        $this->get('/profile')
             ->assertOk()
-            ->assertSee('تغيير كلمة المرور');
+            ->assertSee('البروفايل');
 
-        $response = $this->patch('/password', [
+        $response = $this->put('/profile/password', [
             'current_password' => 'admin12345',
             'password' => 'new-admin-password',
             'password_confirmation' => 'new-admin-password',
         ]);
 
-        $response->assertRedirect('/password');
+        $response->assertRedirect('/profile');
         $this->assertFalse(auth()->attempt([
             'email' => $user->email,
             'password' => 'admin12345',

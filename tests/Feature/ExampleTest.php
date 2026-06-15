@@ -285,7 +285,6 @@ class ExampleTest extends TestCase
         ]);
 
         $response = $this->get('/pipeline?' . http_build_query([
-            'company_id' => $beit->id,
             'status' => 'prospect',
             'interest' => 'اساسيات التصوير',
             'service_city' => 'جدة',
@@ -296,6 +295,34 @@ class ExampleTest extends TestCase
         $response->assertSee('Filtered Pipeline Customer');
         $response->assertDontSee('Other Pipeline Customer');
         $response->assertSee('عدد العملاء المطابقين');
+    }
+
+    public function test_vida_pipeline_shows_only_vida_customers(): void
+    {
+        $beit = Company::where('name', 'بيت المصور')->first();
+        $vida = Company::where('name', 'فيدا برودكشن')->first();
+
+        Customer::create([
+            'company_id' => $beit->id,
+            'name' => 'Beit Pipeline Customer',
+            'status' => 'lead',
+        ]);
+
+        Customer::create([
+            'company_id' => $vida->id,
+            'name' => 'Vida Pipeline Customer',
+            'status' => 'contacted',
+            'interest' => 'تصوير منتجات',
+        ]);
+
+        $response = $this->get('/pipeline/vida');
+
+        $response->assertOk();
+        $response->assertSee('مسار فيدا برودكشن');
+        $response->assertSee('عميل جديد');
+        $response->assertSee('تم ارسال العرض');
+        $response->assertSee('Vida Pipeline Customer');
+        $response->assertDontSee('Beit Pipeline Customer');
     }
 
     public function test_follow_up_center_loads_open_follow_ups(): void

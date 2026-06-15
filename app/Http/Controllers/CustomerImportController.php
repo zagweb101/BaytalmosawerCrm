@@ -253,6 +253,10 @@ class CustomerImportController extends Controller
         $status = $this->value($row, ['status', 'الحالة']) ?? 'lead';
 
         return match (true) {
+            str_contains($status, 'جديد') => 'lead',
+            str_contains($status, 'عرض') => 'contacted',
+            str_contains($status, 'اتفاق') => 'customer',
+            str_contains($status, 'مفقود') => 'inactive',
             str_contains($status, 'تواصل') => 'contacted',
             str_contains($status, 'متابعة') => 'prospect',
             str_contains($status, 'مشترك'), str_contains($status, 'حقيقي'), str_contains($status, 'customer') => 'customer',

@@ -8,6 +8,7 @@ use App\Models\CompanyOffering;
 use App\Models\Customer;
 use App\Models\TeamMember;
 use App\Services\RecommendationService;
+use App\Support\CustomerStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -72,20 +73,28 @@ class CustomerController extends Controller
                 ->distinct()
                 ->orderBy('interest')
                 ->pluck('interest'),
-            'statuses' => $this->statuses(),
+            'statuses' => CustomerStatus::orderedLabelsFor(),
             'totalCustomers' => $this->applyCompanyScope(Customer::query())->count(),
             'activeCustomers' => $this->applyCompanyScope(Customer::query())->where('status', 'customer')->count(),
             'openLeads' => $this->applyCompanyScope(Customer::query())->whereIn('status', ['lead', 'contacted', 'prospect'])->count(),
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         $companies = $this->visibleCompanies();
+        $requestedCompanyId = $request->integer('company_id') ?: null;
+
+        if ($requestedCompanyId) {
+            $this->ensureCompanyAccess($requestedCompanyId);
+        }
+
+        $customerCompanyId = $requestedCompanyId ?: $companies->first()?->id;
+        $companyName = $companies->firstWhere('id', $customerCompanyId)?->name;
 
         return view('customers.create', [
             'customer' => new Customer([
-                'company_id' => $companies->first()?->id,
+                'company_id' => $customerCompanyId,
                 'status' => 'lead',
             ]),
             'companies' => $companies,
@@ -100,7 +109,9 @@ class CustomerController extends Controller
                 ->orderBy('name')
                 ->pluck('name'),
             'serviceCities' => $this->serviceCities(),
-            'statuses' => $this->statuses(),
+            'statuses' => CustomerStatus::orderedLabelsFor($companyName),
+            'beitStatuses' => CustomerStatus::orderedLabelsFor(CustomerStatus::BEIT_COMPANY),
+            'vidaStatuses' => CustomerStatus::orderedLabelsFor(CustomerStatus::VIDA_COMPANY),
             'paymentStatuses' => $this->paymentStatuses(),
             'fulfillmentStatuses' => $this->fulfillmentStatuses(),
         ]);
@@ -115,7 +126,7 @@ class CustomerController extends Controller
         return view('customers.show', [
             'customer' => $customer,
             'teamMembers' => TeamMember::where('is_active', true)->orderBy('name')->get(),
-            'statuses' => $this->statuses(),
+            'statuses' => CustomerStatus::labelsFor($customer->owningCompany?->name),
             'followUpTypes' => $this->followUpTypes(),
             'taskPriorities' => $this->taskPriorities(),
             'dealStages' => $this->dealStages(),
@@ -142,10 +153,12 @@ class CustomerController extends Controller
     public function edit(Customer $customer): View
     {
         $this->ensureCompanyAccess($customer->company_id);
+        $customer->loadMissing('owningCompany');
+        $companies = $this->visibleCompanies();
 
         return view('customers.edit', [
             'customer' => $customer,
-            'companies' => $this->visibleCompanies(),
+            'companies' => $companies,
             'campaigns' => $this->applyCompanyScope(Campaign::with('company'))
                 ->where(function ($query) use ($customer) {
                     $query->where('is_active', true)
@@ -164,7 +177,9 @@ class CustomerController extends Controller
                 ->orderBy('name')
                 ->pluck('name'),
             'serviceCities' => $this->serviceCities(),
-            'statuses' => $this->statuses(),
+            'statuses' => CustomerStatus::orderedLabelsFor($customer->owningCompany?->name),
+            'beitStatuses' => CustomerStatus::orderedLabelsFor(CustomerStatus::BEIT_COMPANY),
+            'vidaStatuses' => CustomerStatus::orderedLabelsFor(CustomerStatus::VIDA_COMPANY),
             'paymentStatuses' => $this->paymentStatuses(),
             'fulfillmentStatuses' => $this->fulfillmentStatuses(),
         ]);
@@ -182,7 +197,8 @@ class CustomerController extends Controller
         $customer->update($data);
 
         if ($oldStatus !== $customer->status) {
-            $statuses = $this->statuses();
+            $customer->loadMissing('owningCompany');
+            $statuses = CustomerStatus::labelsFor($customer->owningCompany?->name);
             $customer->recordActivity(
                 'status_changed',
                 'تم تغيير حالة العميل',
@@ -216,7 +232,7 @@ class CustomerController extends Controller
             'company' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
-            'status' => ['required', 'in:lead,contacted,prospect,customer,inactive'],
+            'status' => ['required', CustomerStatus::validationRule()],
             'source' => ['nullable', 'string', 'max:255'],
             'interest' => ['nullable', 'string', 'max:255'],
             'service_city' => ['nullable', 'in:' . implode(',', array_keys($this->serviceCities()))],
@@ -244,17 +260,6 @@ class CustomerController extends Controller
                 abort(422, 'الحملة المختارة لا تتبع نفس شركة العميل.');
             }
         }
-    }
-
-    private function statuses(): array
-    {
-        return [
-            'lead' => 'عميل محتمل',
-            'contacted' => 'تم التواصل',
-            'prospect' => 'قيد المتابعة',
-            'customer' => 'مشترك / عميل حقيقي',
-            'inactive' => 'مغلق / غير نشط',
-        ];
     }
 
     private function followUpTypes(): array

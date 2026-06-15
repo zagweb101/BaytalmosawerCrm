@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\CustomerStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -89,6 +90,13 @@ class Customer extends Model
     public function deals(): HasMany
     {
         return $this->hasMany(Deal::class)->latest();
+    }
+
+    public function statusLabel(): string
+    {
+        $this->loadMissing('owningCompany');
+
+        return CustomerStatus::label($this->status, $this->owningCompany?->name);
     }
 
     public function recordActivity(

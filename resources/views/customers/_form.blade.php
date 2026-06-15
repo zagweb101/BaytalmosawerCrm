@@ -161,7 +161,10 @@
 <script>
     (() => {
         const companySelect = document.getElementById('company_id');
+        const statusSelect = document.getElementById('status');
         const label = document.getElementById('interest_label');
+        const beitStatuses = @json($beitStatuses ?? []);
+        const vidaStatuses = @json($vidaStatuses ?? []);
         const hiddenInterest = document.getElementById('interest');
         const courseSelect = document.getElementById('course_interest');
         const serviceInput = document.getElementById('service_interest');
@@ -195,6 +198,30 @@
         const selectedCompanyName = () => {
             const option = companySelect.options[companySelect.selectedIndex];
             return option ? option.dataset.companyName : '';
+        };
+
+        const renderStatuses = () => {
+            const companyName = selectedCompanyName();
+            const statusMap = companyName === 'فيدا برودكشن' ? vidaStatuses : beitStatuses;
+            const currentStatus = statusSelect.value;
+
+            statusSelect.innerHTML = '';
+
+            Object.entries(statusMap).forEach(([value, labelText]) => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = labelText;
+
+                if (value === currentStatus) {
+                    option.selected = true;
+                }
+
+                statusSelect.append(option);
+            });
+
+            if (!statusSelect.value) {
+                statusSelect.value = 'lead';
+            }
         };
 
         const filterCampaigns = () => {
@@ -255,6 +282,7 @@
             hiddenInterest.value = '';
             removeTemporaryCourse();
             filterCampaigns();
+            renderStatuses();
             setInterestMode();
         });
 
@@ -267,6 +295,7 @@
         });
 
         filterCampaigns();
+        renderStatuses();
         setInterestMode();
     })();
 </script>

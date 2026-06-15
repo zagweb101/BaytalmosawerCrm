@@ -1,15 +1,18 @@
 @extends('layouts.app')
 
-@section('title', 'مسار العملاء - CRM Laravel')
+@section('title', ($pipelineTitle ?? 'مسار العملاء') . ' - CRM Laravel')
 
 @section('content')
     <section class="hero">
         <div>
-            <h1>مسار العملاء</h1>
-            <p class="subtitle">تابع انتقال العملاء من مرحلة الاهتمام الأولى حتى الاشتراك أو إغلاق الفرصة.</p>
+            <h1>{{ $pipelineTitle ?? 'مسار العملاء' }}</h1>
+            <p class="subtitle">{{ $pipelineSubtitle ?? 'تابع انتقال العملاء من مرحلة الاهتمام الأولى حتى الاشتراك أو إغلاق الفرصة.' }}</p>
+            @if ($lockedCompany)
+                <p class="muted">الشركة: <strong>{{ $lockedCompany->name }}</strong></p>
+            @endif
         </div>
         @if (auth()->user()?->canDo('customers.create'))
-            <a class="button" href="{{ route('customers.create') }}">إضافة عميل</a>
+            <a class="button" href="{{ route('customers.create', $lockedCompany ? ['company_id' => $lockedCompany->id] : []) }}">إضافة عميل</a>
         @endif
     </section>
 
@@ -18,14 +21,7 @@
     @endif
 
     <section class="panel mb-3">
-        <form class="toolbar toolbar-wide" method="GET" action="{{ route('pipeline.index') }}">
-            <select name="company_id">
-                <option value="">كل الشركات</option>
-                @foreach ($companies as $company)
-                    <option value="{{ $company->id }}" @selected($selectedCompanyId === $company->id)>{{ $company->name }}</option>
-                @endforeach
-            </select>
-
+        <form class="toolbar toolbar-wide" method="GET" action="{{ route($pipelineRoute ?? 'pipeline.index') }}">
             <select name="status">
                 <option value="">كل الحالات</option>
                 @foreach ($statuses as $status => $label)
@@ -55,7 +51,7 @@
             </select>
 
             <button class="button" type="submit">تطبيق</button>
-            <a class="button secondary" href="{{ route('pipeline.index') }}">إلغاء</a>
+            <a class="button secondary" href="{{ route($pipelineRoute ?? 'pipeline.index') }}">إلغاء</a>
         </form>
         <div class="pager">
             <span>عدد العملاء المطابقين: <strong>{{ $filteredCustomersCount }}</strong></span>
@@ -75,7 +71,7 @@
                 @forelse ($customers as $customer)
                     <div class="pipeline-card">
                         <strong>{{ $customer->name }}</strong>
-                        <span class="muted">{{ $customer->owningCompany?->name }}{{ $customer->interest ? ' - ' . $customer->interest : '' }}</span>
+                        <span class="muted">{{ $customer->interest ?: 'بدون دورة أو خدمة' }}</span>
                         <span class="muted">{{ $customer->phone ?: $customer->email ?: 'بدون بيانات تواصل' }}</span>
                         <span class="muted">
                             {{ $customer->service_city ?: 'بدون مدينة' }}
@@ -93,6 +89,15 @@
                                     @method('PATCH')
                                     <input type="hidden" name="status" value="{{ $nextStatus }}">
                                     <button class="button" type="submit">{{ $statuses[$nextStatus] }}</button>
+                                </form>
+                            @endif
+
+                            @if (($isVidaPipeline ?? false) && ! in_array($customer->status, ['inactive', 'customer'], true) && auth()->user()?->canDo('customers.update'))
+                                <form method="POST" action="{{ route('pipeline.status.update', $customer) }}">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="status" value="inactive">
+                                    <button class="button secondary" type="submit">مفقود</button>
                                 </form>
                             @endif
                         </div>

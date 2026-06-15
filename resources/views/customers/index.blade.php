@@ -132,7 +132,7 @@
                                 @endif
                             </td>
                             <td>
-                                <span class="badge {{ $customer->status }}">{{ $statuses[$customer->status] ?? $customer->status }}</span>
+                                <span class="badge {{ $customer->status }}">{{ $customer->statusLabel() }}</span>
                                 @if ($customer->source)
                                     <div class="muted">{{ $customer->source }}</div>
                                 @endif

@@ -1142,7 +1142,8 @@
                     <div class="sidebar-label">العملاء والمبيعات</div>
                     @if (auth()->user()?->canDo('customers.view'))
                         <a class="nav-item {{ request()->routeIs('customers.*') ? 'active' : '' }}" href="{{ route('customers.index') }}">العملاء</a>
-                        <a class="nav-item {{ request()->routeIs('pipeline.*') ? 'active' : '' }}" href="{{ route('pipeline.index') }}">المسار</a>
+                        <a class="nav-item {{ request()->routeIs('pipeline.index') ? 'active' : '' }}" href="{{ route('pipeline.index') }}">مسار بيت المصور</a>
+                        <a class="nav-item {{ request()->routeIs('pipeline.vida') ? 'active' : '' }}" href="{{ route('pipeline.vida') }}">مسار فيدا</a>
                     @endif
                     @if (auth()->user()?->canDo('deals.view'))
                         <a class="nav-item {{ request()->routeIs('deals.*') ? 'active' : '' }}" href="{{ route('deals.index') }}">الصفقات</a>

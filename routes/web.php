@@ -38,6 +38,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('dashboard', DashboardController::class)->middleware('permission:dashboard.view')->name('dashboard');
     Route::get('pipeline', [PipelineController::class, 'index'])->middleware('permission:customers.view')->name('pipeline.index');
+    Route::get('pipeline/vida', [PipelineController::class, 'vida'])->middleware('permission:customers.view')->name('pipeline.vida');
     Route::patch('pipeline/customers/{customer}/status', [PipelineController::class, 'updateStatus'])->middleware('permission:customers.update')->name('pipeline.status.update');
     Route::get('reports/sources', [ReportController::class, 'sources'])->middleware('permission:reports.view')->name('reports.sources');
     Route::get('reports/interests', [ReportController::class, 'interests'])->middleware('permission:reports.view')->name('reports.interests');
